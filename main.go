@@ -11,7 +11,18 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
+type SnapcraftMetricsItem struct {
+	Name              string `json:"name"`
+	Values            []int  `json:"values"`
+	CurrentlyReleased string `json:"currently_released,omitempty"`
+}
+
 type SnapcraftMetrics struct {
+	Buckets    string `json:"buckets"`
+	MetricName string `json:"metric_name"`
+	Series     []SnapcraftMetricsItem
+	SnapID     string `json:"snap_id"`
+	Status     string `json:"status"`
 }
 
 type SnapcraftCollector struct {
@@ -75,7 +86,6 @@ func newSnapcraftCollector(snapNames []string) *SnapcraftCollector {
 }
 
 func (collector *SnapcraftCollector) Describe(ch chan<- *prometheus.Desc) {
-
 	//Update this section with the each metric you create for a given collector
 	ch <- collector.deviceChangeDaily
 	ch <- collector.deviceChangeWeekly
@@ -90,8 +100,7 @@ func (collector *SnapcraftCollector) Describe(ch chan<- *prometheus.Desc) {
 }
 
 func (collector *SnapcraftCollector) Collect(ch chan<- prometheus.Metric) {
-	// TODO call `snapfract metrics`` command
-	// parse JSON
+
 }
 
 func main() {
