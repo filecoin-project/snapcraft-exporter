@@ -1,7 +1,7 @@
 ARG RISK=stable
 ARG UBUNTU=xenial
 
-FROM ubuntu:$UBUNTU as builder
+FROM ubuntu:$UBUNTU as snapcraft-builder
 ARG RISK
 ARG UBUNTU
 RUN echo "Building snapcraft:$RISK in ubuntu:$UBUNTU"
@@ -52,14 +52,23 @@ RUN snap_version="$(awk '/^version:/{print $2}' /snap/snapcraft/current/meta/sna
 RUN echo 'exec "$SNAP/usr/bin/python3" "$SNAP/bin/snapcraft" "$@"' >> /snap/bin/snapcraft
 RUN chmod +x /snap/bin/snapcraft
 
+FROM golang:1.18-buster AS go-builder
+
+COPY ./ /snapcraft-exporter
+
+WORKDIR /snapcraft-exporter
+
+RUN go mod download
+RUN GOOS=linux go build -o exporter .
+
 # Multi-stage build, only need the snaps from the builder. Copy them one at a
 # time so they can be cached.
 FROM ubuntu:$UBUNTU
-COPY --from=builder /snap/core /snap/core
-COPY --from=builder /snap/core18 /snap/core18
-COPY --from=builder /snap/core20 /snap/core20
-COPY --from=builder /snap/snapcraft /snap/snapcraft
-COPY --from=builder /snap/bin/snapcraft /snap/bin/snapcraft
+COPY --from=snapcraft-builder /snap/core /snap/core
+COPY --from=snapcraft-builder /snap/core18 /snap/core18
+COPY --from=snapcraft-builder /snap/core20 /snap/core20
+COPY --from=snapcraft-builder /snap/snapcraft /snap/snapcraft
+COPY --from=snapcraft-builder /snap/bin/snapcraft /snap/bin/snapcraft
 
 # Generate locale and install dependencies.
 RUN apt-get update && apt-get dist-upgrade --yes && apt-get install --yes snapd sudo locales && locale-gen en_US.UTF-8
@@ -72,3 +81,9 @@ ENV PATH="/snap/bin:/snap/snapcraft/current/usr/bin:$PATH"
 ENV SNAP="/snap/snapcraft/current"
 ENV SNAP_NAME="snapcraft"
 ENV SNAP_ARCH="amd64"
+
+EXPOSE 9888
+
+COPY --from=go-builder /snapcraft-exporter/exporter /exporter
+
+ENTRYPOINT ["/exporter"]
