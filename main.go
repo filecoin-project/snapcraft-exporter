@@ -121,7 +121,6 @@ func (collector *SnapcraftCollector) Describe(ch chan<- *prometheus.Desc) {
 func getSnapcraftMetrics(snapName string, snapMetricName string) SnapcraftMetrics {
 	out, err := exec.Command("snapcraft", "metrics", snapName, "--name", snapMetricName, "--format", "json").Output()
 	fmt.Printf("snapcraft metrics %s --name %s --format json\n", snapName, snapMetricName)
-	fmt.Println(string(out))
 	if err != nil {
 		panic(err)
 	}
@@ -145,7 +144,7 @@ func collectMetric(snapName string, snapMetricName string, metric *prometheus.De
 
 func (collector *SnapcraftCollector) Collect(ch chan<- prometheus.Metric) {
 	for _, snapName := range collector.SnapNames {
-		fmt.Println(snapName)
+	  fmt.Printf("Started collecting metrics for %s \n", snapName)
 		collectMetric(snapName, "daily_device_change", collector.deviceChangeDaily, ch)
 		collectMetric(snapName, "weekly_device_change", collector.deviceChangeWeekly, ch)
 		collectMetric(snapName, "installed_base_by_channel", collector.installBaseByChannelDaily, ch)
@@ -156,6 +155,7 @@ func (collector *SnapcraftCollector) Collect(ch chan<- prometheus.Metric) {
 		collectMetric(snapName, "weekly_installed_base_by_country", collector.installBaseByCountryWeekly, ch)
 		collectMetric(snapName, "weekly_installed_base_by_operating_system", collector.installBaseBySystemWeekly, ch)
 		collectMetric(snapName, "weekly_installed_base_by_version", collector.installBaseByVersionWeekly, ch)
+	  fmt.Printf("Finished collecting metrics for %s \n", snapName)
 	}
 }
 
